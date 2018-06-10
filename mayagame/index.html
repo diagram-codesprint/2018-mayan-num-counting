@@ -1,0 +1,490 @@
+<html>
+<head>
+		<title>Maya Matching Game</title>
+		<style type="text/css">
+			.cell
+			{
+				position:absolute;
+				height: 100px;
+				width: 100px;
+			}
+			img {
+    			max-width: 100%;
+    			max-height: 100%;
+			}
+			body
+			{
+				background-color:rgb(230,230,230);
+			}
+			.text
+			{
+				float: right;
+				position: relative;
+				top: 50px;
+				width: 30%;
+				font-family:Arial, Helvetica, sans-serif
+			}
+			.button {
+    
+    
+    text-align: center;
+    text-decoration: none;
+    
+    font-size: 24px;
+}
+			
+		</style>
+
+
+			
+</head>
+<body onload="setup()" >
+<script language="JavaScript" type="text/javascript">
+<!--
+//add: dots, collections of items (homogeneous and heterogeneous)
+//change time interval when succeed and fail
+var SIDEX=5;
+
+
+var SIDEY=3;
+var MAXNUM=15; //largest number represented... 
+
+var NUMNUMS;
+var MAXSIDEX=8;
+
+
+var K32=100;
+var XPAD=K32;
+var YPAD=250;//50
+var SELECTIONL=XPAD+SIDEX*K32+XPAD;
+var PALETTEL=SELECTIONL+2*XPAD;
+
+var paletteSelection=0;
+
+var state=0; //0: no tiles flipped; 1: 1 tile flipped; 2: 2 tiles flipped
+var prevFlipped0=[]; //coords of previous flipped tile
+var prevFlipped1=[]; //coords of second of two tiles flipped
+
+var grid=[]; //pieces of grid on screen
+var gridValue=[]; //numeric values of tiles
+var gridStatus=[]; //up or down or gone
+var front=[]; //front of tile
+
+var snd = new Audio("chime.wav"); 
+var RUNSTOP;
+
+
+
+
+
+
+for(i=0;i<MAXSIDEX;i++)
+{
+	grid[i]=[];
+	gridValue[i]=[];
+	gridStatus[i]=[];
+	front[i]=[];
+}
+var target;
+function createTargetCell(imgName)
+{
+
+		document.write("<div class='cell' id='targetDiv'><img id='target' src="+imgName+"></div>");
+		var targetDiv=document.getElementById("targetDiv");
+		targetDiv.style.left=300;
+		targetDiv.style.top=50;
+		target=document.getElementById("target");
+
+}
+/*
+function createCell(x,y,imgNo)
+{
+		var cellid="c"+x+"$"+y;
+		var imgName=gridimage[imgNo];
+		document.write("<div class='cell'  id='"+cellid+"'><img name='"+cellid+"' src="+imgName+"></div>");
+		thiscell=document.getElementById(cellid);
+		thiscell.style.left=x;
+		thiscell.style.top=y;
+*/
+var blank="blank.png";
+var back="back.png";
+//arrays of image file names
+var maya=["maya0.png","maya1.png","maya2.png","maya3.png","maya4.png","maya5.png",
+"maya6.png","maya7.png","maya8.png","maya9.png","maya10.png","maya11.png",
+"maya12.png","maya13.png","maya14.png","maya15.png"];
+var arab=["arab0.png","arab1.png","arab2.png","arab3.png","arab4.png","arab5.png",
+"arab6.png","arab7.png","arab8.png","arab9.png","arab10.png","arab11.png",
+"arab12.png","arab13.png","arab14.png","arab15.png"];
+var dot=["dot0.png","dot1.png","dot2.png","dot3.png","dot4.png","dot5.png","dot6.png","dot7.png","dot8.png","dot9.png","dot10.png","dot11.png","dot12.png","dot13.png","dot14.png","dot15.png"];
+
+
+var shuffledRange;
+//for (var i=0;i<(2*(NUMNUMS));i++)
+//	shuffledRange[i]=i;
+//shuffle(shuffledRange);
+//console.log(shuffledRange);
+
+
+var indirectTable;
+//for(var i=0;i<NUMNUMS;i++)
+//{
+//	indirectTable[i]=shuffledRange[i];
+//	indirectTable[i+NUMNUMS]=shuffledRange[i]+MAXNUM+1;
+//}
+var hit=false;
+var score=0;
+var x,y,cellid,thiscell,n,m;
+var val;
+var stimImages=maya;
+var responseImages=arab;
+
+for(var i=0;i<SIDEX;i++)
+	for(var j=0;j<SIDEY;j++)
+	{
+		x=XPAD+K32*i;
+		y=YPAD+K32*j;
+		cellid="c"+x+"$"+y;
+		var val=valueFromCoords(i,j);
+		document.write("<div class='cell'  id='"+cellid+"'><img name='"+cellid+"' src='"+responseImages[val]+"'></div>");
+		thiscell=document.getElementById(cellid);
+		thiscell.style.left=x;
+		thiscell.style.top=y;
+		grid[i][j]=thiscell;
+		//gridStatus[i][j]="down";
+		//n=j*SIDEX+i;
+		//front[i][j]=image(indirectTable[scramble(n)]);
+		//gridValue[i][j]=numval(indirectTable[scramble(n)]);
+	}
+function setGame()
+{
+	for (var i=0;i<SIDEX;i++)
+		for(var j=0;j<SIDEY;j++)
+			document.images[grid[i][j].id].src=responseImages[valueFromCoords(i,j)];
+}
+createTargetCell("back.png");
+var running=false;
+function runStop()
+{
+	running=!running;
+	if(running)
+	{
+		RUNSTOP.value="stop";
+	}
+	else RUNSTOP.value="run";
+	if (running)
+		play();
+}
+
+function play()
+{
+	if (!running)
+		return;
+	changeTarget();
+	setTimeout(markTimeout,trialTime);
+	
+}
+var targetVal;
+var MARKTIMEOUTDELAY=500;
+var INITTRIALTIME=3000;
+trialTime=INITTRIALTIME;
+function markTimeout()
+{
+	if(!hit)
+		mismatch();
+	target.src="back.png";//back.png
+	setTimeout(play,MARKTIMEOUTDELAY);
+}
+
+var TRIALADJUST=.9;
+function match()
+{
+	adjustScore(1);
+	trialTime=trialTime*TRIALADJUST;
+	displayTrialTime();
+}
+function mismatch()
+{
+	trialTime=trialTime/TRIALADJUST;
+	displayTrialTime();
+	//setTimeout(changeTarget,MARKTIMEOUTDELAY);
+}
+function changeTarget()
+{
+	targetVal=1+Math.floor(MAXNUM*Math.random());//don't use 0
+	target.src=stimImages[targetVal];
+	hit=false;
+}
+function adjustScore(delta)
+{
+	var scoreID=document.getElementById("score");
+	var score=parseInt(scoreID.value);
+	score=score+delta;
+	scoreID.value=score.toString();
+}
+function displayTrialTime()
+{
+	var trialID=document.getElementById("trialTime");
+	trialID.value=Math.floor(trialTime);
+}
+/*
+function play()
+{
+	NUMNUMS=(SIDEX*SIDEY)/2;
+	state=0;
+	shuffledRange=[];
+	for (var i=0;i<MAXNUM+1;i++)
+		shuffledRange[i]=i;
+	shuffle(shuffledRange);
+	console.log(shuffledRange);
+	indirectTable=[];
+	for(var i=0;i<NUMNUMS;i++)
+	{
+		indirectTable[i]=shuffledRange[i];
+		indirectTable[i+NUMNUMS]=shuffledRange[i]+MAXNUM+1;
+	}
+	shuffledRange=[];
+	for (var i=0;i<2*NUMNUMS;i++)
+		shuffledRange[i]=i;
+	shuffle(shuffledRange);
+	for(var i=0;i<SIDEX;i++)
+		for(var j=0;j<SIDEY;j++)
+		{
+			gridStatus[i][j]="down";
+			n=j*SIDEX+i;
+			front[i][j]=image(indirectTable[scramble(n)]);
+			gridValue[i][j]=numval(indirectTable[scramble(n)]);
+			drawDirect(i,j,'back.png');
+		}
+	for(var i=SIDEX;i<MAXSIDEX;i++)
+		for(var j=0;j<SIDEY;j++)
+			drawDirect(i,j,'background.png');
+}
+*/
+
+function numval(m)
+{
+	if (m>MAXNUM)
+		return m-MAXNUM-1;
+	return m;
+}
+function image(m)
+{
+	console.log("m in image",m);
+	if (m>MAXNUM)
+		return arab[m-MAXNUM-1];
+	return maya[m];
+}
+function scramble(m)
+{
+	//stub for permute
+	return shuffledRange[m]; 
+}
+function shuffle (array) {
+  var i = 0
+    , j = 0
+    , temp = null
+
+  for (i = array.length - 1; i > 0; i -= 1) {
+    j = Math.floor(Math.random() * (i + 1))
+    temp = array[i]
+    array[i] = array[j]
+    array[j] = temp
+  }
+}
+
+
+
+//constructors and methods
+function setup()
+{
+	document.onmousedown=mouseDown;
+	RUNSTOP=document.getElementById("runStop");
+	
+	
+}
+function drawDirect(x,y,imageName)
+{
+	document.images[grid[x][y].id].src=imageName;
+}
+var listening=true;
+function mouseDown(e)
+{
+	if (!e) var e=window.event;
+	x=e.clientX;
+	y=e.clientY;
+	var gx=Math.floor((x-XPAD)/K32)
+	var gy=Math.floor((y-YPAD)/K32)
+	console.log(gx+":"+gy);
+	if (inWorkspace(gx,gy))
+	{
+		if (listening)
+		{
+			//listening=false;
+			processWorkspace(gx,gy);
+			//listening=true;
+		}
+		return false;
+	}
+	
+	
+	return true;
+}
+function inWorkspace(x,y)
+{
+	if ((x<0)||(x>(SIDEX-1))||(y<0)||(y>(SIDEY-1)))
+		return false;
+	return true;
+}
+function processWorkspace(x,y)
+{
+	var tryValue=valueFromCoords(x,y);
+	//alert("x: "+x+" y: "+y+" tryValue: "+tryValue);
+	if(tryValue==targetVal)
+	{
+		snd.play();
+		target.src="back.png";
+		match();
+		hit=true;
+	}
+}
+function valueFromCoords(x,y)
+{
+	return 1+5*y+x;
+}
+/*
+function processWorkspace(x,y)
+{
+	console.log("processing click ",x,y);
+	console.log("state:",state);
+	if (gridStatus[x][y]=="gone") //ignore click on removed tile
+		return;
+	if (state==0)
+	{
+		flipTile(x,y);
+		prevFlipped0=[x,y];
+		state=1; //one tile flipped
+		return;
+	}
+	if (state==1)
+	{
+		if (isDown(x,y)) //ignore click on turned up tile
+		{
+			flipTile(x,y);
+			if (gridValue[x][y]==gridValue[prevFlipped0[0]][prevFlipped0[1]])
+			{
+				listening=false;
+				state=0; //will be no tiles flipped
+				gridStatus[x][y]="gone"; //do this w/o waiting for timeout!
+				gridStatus[prevFlipped0[0]][prevFlipped0[1]]="gone";
+				snd.play(); //signal match but delay the disappearance
+				setTimeout(function(){
+					//listening=false;
+					removeTile(x,y);
+					removeTile(prevFlipped0[0],prevFlipped0[1]);listening=true;},700);
+				return;
+			}
+			//no match... leave flipped
+			state=2; //two tiles flipped
+			prevFlipped1=[x,y];
+			return;
+		}
+		return; //ignoring click on turned up tile
+	}
+	if (state==2) //flip last two tiles on any click
+	{
+		state=0;
+		flipTile(prevFlipped0[0],prevFlipped0[1]);
+		flipTile(prevFlipped1[0],prevFlipped1[1]);
+		return;
+	}
+	alert("bad state");
+	return;
+}
+
+function flipTile(x,y)
+{
+	if (gridStatus[x][y]=="up")
+	{
+		console.log("flipping tile down");
+		drawDirect(x,y,back);
+		gridStatus[x][y]="down";
+		return;
+	}
+	console.log("flipping tile up");
+	drawDirect(x,y,front[x][y]);
+	gridStatus[x][y]="up";
+}
+function isDown(x,y)
+{
+	return (gridStatus[x][y]=="down");
+}
+function removeTile(x,y)
+{
+	gridStatus[x][y]="gone";
+	drawDirect(x,y,blank);
+}
+*/
+
+function mayanArabic()
+{
+	stimImages=maya;
+	responseImages=arab;
+	setGame();
+}
+function arabicMayan()
+{
+	stimImages=arab;
+	responseImages=maya;
+	setGame();
+}
+function dotsArabic()
+{
+	stimImages=dot;
+	responseImages=arab;
+	setGame();
+}
+function arabicDots()
+{
+	stimImages=arab;
+	responseImages=dot;
+	setGame();
+}function dotsMayan()
+{
+	stimImages=dot;
+	responseImages=maya;
+	setGame();
+}
+function mayanDots()
+{
+	stimImages=maya;
+	responseImages=dot;
+	setGame();
+}
+//-->
+</script>
+
+
+<div class="text">
+
+<h2>Number Matching Game</h2>
+As tiles appear at the top, click the matching number to make them go away. 
+
+<br>
+Score:
+<input type="text" value="0" id="score">
+<br>
+Trial time: <input type="text" value="0" id="trialTime">
+<br>
+<input type="button" class="button" value="run" id="runStop" onclick="runStop()">
+<br>
+<input type="button" class="button" value="Mayan-Arabic" onclick="mayanArabic()">
+<input type="button" class="button" value="Arabic-Mayan" onclick="arabicMayan()">
+<input type="button" class="button" value="Mayan-Dots" onclick="mayanDots()">
+<input type="button" class="button" value="Dots-Mayan" onclick="dotsMayan()">
+<br>
+<input type="button" class="button" value="Dots-Arabic" onclick="dotsArabic()">
+<input type="button" class="button" value="Arabic-Dots" onclick="arabicDots()">
+</div>
+
+</body>
+</html>
