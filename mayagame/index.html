@@ -41,12 +41,14 @@
 <body onload="setup()" >
 <script language="JavaScript" type="text/javascript">
 <!--
-//add: dots, collections of items (homogeneous and heterogeneous)
-//change time interval when succeed and fail
+//add: collections of items (homogeneous and heterogeneous)
+
+//add morse code for nonvisual presentation
 var SIDEX=5;
 
 
 var SIDEY=3;
+var MAXSIDEY=3;
 var MAXNUM=15; //largest number represented... 
 
 var NUMNUMS;
@@ -96,19 +98,11 @@ function createTargetCell(imgName)
 		target=document.getElementById("target");
 
 }
-/*
-function createCell(x,y,imgNo)
-{
-		var cellid="c"+x+"$"+y;
-		var imgName=gridimage[imgNo];
-		document.write("<div class='cell'  id='"+cellid+"'><img name='"+cellid+"' src="+imgName+"></div>");
-		thiscell=document.getElementById(cellid);
-		thiscell.style.left=x;
-		thiscell.style.top=y;
-*/
+
 var blank="blank.png";
 var back="back.png";
 //arrays of image file names
+//note: zeros not used in game
 var maya=["maya0.png","maya1.png","maya2.png","maya3.png","maya4.png","maya5.png",
 "maya6.png","maya7.png","maya8.png","maya9.png","maya10.png","maya11.png",
 "maya12.png","maya13.png","maya14.png","maya15.png"];
@@ -116,21 +110,11 @@ var arab=["arab0.png","arab1.png","arab2.png","arab3.png","arab4.png","arab5.png
 "arab6.png","arab7.png","arab8.png","arab9.png","arab10.png","arab11.png",
 "arab12.png","arab13.png","arab14.png","arab15.png"];
 var dot=["dot0.png","dot1.png","dot2.png","dot3.png","dot4.png","dot5.png","dot6.png","dot7.png","dot8.png","dot9.png","dot10.png","dot11.png","dot12.png","dot13.png","dot14.png","dot15.png"];
+var dice=["dice0.png","dice1.png","dice2.png","dice3.png","dice4.png","dice5.png","dice6.png","dice7.png","dice8.png","dice9.png","dice10.png","dice11.png","dice12.png","dice13.png","dice14.png","dice15.png"];
 
 
-var shuffledRange;
-//for (var i=0;i<(2*(NUMNUMS));i++)
-//	shuffledRange[i]=i;
-//shuffle(shuffledRange);
-//console.log(shuffledRange);
 
 
-var indirectTable;
-//for(var i=0;i<NUMNUMS;i++)
-//{
-//	indirectTable[i]=shuffledRange[i];
-//	indirectTable[i+NUMNUMS]=shuffledRange[i]+MAXNUM+1;
-//}
 var hit=false;
 var score=0;
 var x,y,cellid,thiscell,n,m;
@@ -150,16 +134,17 @@ for(var i=0;i<SIDEX;i++)
 		thiscell.style.left=x;
 		thiscell.style.top=y;
 		grid[i][j]=thiscell;
-		//gridStatus[i][j]="down";
-		//n=j*SIDEX+i;
-		//front[i][j]=image(indirectTable[scramble(n)]);
-		//gridValue[i][j]=numval(indirectTable[scramble(n)]);
+		
 	}
+
 function setGame()
 {
 	for (var i=0;i<SIDEX;i++)
 		for(var j=0;j<SIDEY;j++)
 			document.images[grid[i][j].id].src=responseImages[valueFromCoords(i,j)];
+	for(var i=0;i<SIDEX;i++)
+		for(var j=SIDEY;j<MAXSIDEY;j++)
+			drawDirect(i,j,'background.png');
 }
 createTargetCell("back.png");
 var running=false;
@@ -187,6 +172,7 @@ var targetVal;
 var MARKTIMEOUTDELAY=500;
 var INITTRIALTIME=3000;
 trialTime=INITTRIALTIME;
+
 function markTimeout()
 {
 	if(!hit)
@@ -196,21 +182,24 @@ function markTimeout()
 }
 
 var TRIALADJUST=.9;
+var timerMode="manual";
 function match()
 {
 	adjustScore(1);
-	trialTime=trialTime*TRIALADJUST;
+	if(timerMode=="auto")
+		trialTime=trialTime*TRIALADJUST;
 	displayTrialTime();
 }
 function mismatch()
 {
-	trialTime=trialTime/TRIALADJUST;
+	if(timerMode=="auto")
+		trialTime=trialTime/TRIALADJUST;
 	displayTrialTime();
 	//setTimeout(changeTarget,MARKTIMEOUTDELAY);
 }
 function changeTarget()
 {
-	targetVal=1+Math.floor(MAXNUM*Math.random());//don't use 0
+	targetVal=1+Math.floor((SIDEY*5)*Math.random());//don't use 0
 	target.src=stimImages[targetVal];
 	hit=false;
 }
@@ -226,40 +215,7 @@ function displayTrialTime()
 	var trialID=document.getElementById("trialTime");
 	trialID.value=Math.floor(trialTime);
 }
-/*
-function play()
-{
-	NUMNUMS=(SIDEX*SIDEY)/2;
-	state=0;
-	shuffledRange=[];
-	for (var i=0;i<MAXNUM+1;i++)
-		shuffledRange[i]=i;
-	shuffle(shuffledRange);
-	console.log(shuffledRange);
-	indirectTable=[];
-	for(var i=0;i<NUMNUMS;i++)
-	{
-		indirectTable[i]=shuffledRange[i];
-		indirectTable[i+NUMNUMS]=shuffledRange[i]+MAXNUM+1;
-	}
-	shuffledRange=[];
-	for (var i=0;i<2*NUMNUMS;i++)
-		shuffledRange[i]=i;
-	shuffle(shuffledRange);
-	for(var i=0;i<SIDEX;i++)
-		for(var j=0;j<SIDEY;j++)
-		{
-			gridStatus[i][j]="down";
-			n=j*SIDEX+i;
-			front[i][j]=image(indirectTable[scramble(n)]);
-			gridValue[i][j]=numval(indirectTable[scramble(n)]);
-			drawDirect(i,j,'back.png');
-		}
-	for(var i=SIDEX;i<MAXSIDEX;i++)
-		for(var j=0;j<SIDEY;j++)
-			drawDirect(i,j,'background.png');
-}
-*/
+
 
 function numval(m)
 {
@@ -294,11 +250,12 @@ function shuffle (array) {
 
 
 
-//constructors and methods
+
 function setup()
 {
 	document.onmousedown=mouseDown;
 	RUNSTOP=document.getElementById("runStop");
+	displayTrialTime();
 	
 	
 }
@@ -351,115 +308,33 @@ function valueFromCoords(x,y)
 {
 	return 1+5*y+x;
 }
-/*
-function processWorkspace(x,y)
+
+function setTimerMode(mode)
 {
-	console.log("processing click ",x,y);
-	console.log("state:",state);
-	if (gridStatus[x][y]=="gone") //ignore click on removed tile
-		return;
-	if (state==0)
-	{
-		flipTile(x,y);
-		prevFlipped0=[x,y];
-		state=1; //one tile flipped
-		return;
-	}
-	if (state==1)
-	{
-		if (isDown(x,y)) //ignore click on turned up tile
-		{
-			flipTile(x,y);
-			if (gridValue[x][y]==gridValue[prevFlipped0[0]][prevFlipped0[1]])
-			{
-				listening=false;
-				state=0; //will be no tiles flipped
-				gridStatus[x][y]="gone"; //do this w/o waiting for timeout!
-				gridStatus[prevFlipped0[0]][prevFlipped0[1]]="gone";
-				snd.play(); //signal match but delay the disappearance
-				setTimeout(function(){
-					//listening=false;
-					removeTile(x,y);
-					removeTile(prevFlipped0[0],prevFlipped0[1]);listening=true;},700);
-				return;
-			}
-			//no match... leave flipped
-			state=2; //two tiles flipped
-			prevFlipped1=[x,y];
-			return;
-		}
-		return; //ignoring click on turned up tile
-	}
-	if (state==2) //flip last two tiles on any click
-	{
-		state=0;
-		flipTile(prevFlipped0[0],prevFlipped0[1]);
-		flipTile(prevFlipped1[0],prevFlipped1[1]);
-		return;
-	}
-	alert("bad state");
-	return;
+	timerMode=mode;
 }
 
-function flipTile(x,y)
+function adjustTimer(factor)
 {
-	if (gridStatus[x][y]=="up")
-	{
-		console.log("flipping tile down");
-		drawDirect(x,y,back);
-		gridStatus[x][y]="down";
-		return;
-	}
-	console.log("flipping tile up");
-	drawDirect(x,y,front[x][y]);
-	gridStatus[x][y]="up";
+	trialTime=trialTime*factor;
+	displayTrialTime();
 }
-function isDown(x,y)
+function setStim(x)
 {
-	return (gridStatus[x][y]=="down");
+	stimImages=x;
 }
-function removeTile(x,y)
+function setResp(x)
 {
-	gridStatus[x][y]="gone";
-	drawDirect(x,y,blank);
+	responseImages=x;
+	setGame();
 }
-*/
+function setSize(size)
+{
+	SIDEY=size/5;
+	setGame();
 
-function mayanArabic()
-{
-	stimImages=maya;
-	responseImages=arab;
-	setGame();
 }
-function arabicMayan()
-{
-	stimImages=arab;
-	responseImages=maya;
-	setGame();
-}
-function dotsArabic()
-{
-	stimImages=dot;
-	responseImages=arab;
-	setGame();
-}
-function arabicDots()
-{
-	stimImages=arab;
-	responseImages=dot;
-	setGame();
-}function dotsMayan()
-{
-	stimImages=dot;
-	responseImages=maya;
-	setGame();
-}
-function mayanDots()
-{
-	stimImages=maya;
-	responseImages=dot;
-	setGame();
-}
+
 //-->
 </script>
 
@@ -477,13 +352,33 @@ Trial time: <input type="text" value="0" id="trialTime">
 <br>
 <input type="button" class="button" value="run" id="runStop" onclick="runStop()">
 <br>
-<input type="button" class="button" value="Mayan-Arabic" onclick="mayanArabic()">
-<input type="button" class="button" value="Arabic-Mayan" onclick="arabicMayan()">
-<input type="button" class="button" value="Mayan-Dots" onclick="mayanDots()">
-<input type="button" class="button" value="Dots-Mayan" onclick="dotsMayan()">
-<br>
-<input type="button" class="button" value="Dots-Arabic" onclick="dotsArabic()">
-<input type="button" class="button" value="Arabic-Dots" onclick="arabicDots()">
+<div>
+	Targets:
+  <input type="radio"  name="stim" onclick="setStim(arab)"> Arabic
+  <input type="radio"  name="stim" onclick="setStim(maya)" checked="checked"> Mayan
+  <input type="radio"  name="stim" onclick="setStim(dice)"> Dice
+  <input type="radio"  name="stim" onclick="setStim(dot)"> Dots
+</div>
+<div>
+	Responses:
+  <input type="radio"  name="resp" onclick="setResp(arab)" checked="checked"> Arabic
+  <input type="radio"  name="resp" onclick="setResp(maya)" > Mayan
+  <input type="radio"  name="resp" onclick="setResp(dice)"> Dice
+  <input type="radio"  name="resp" onclick="setResp(dot)"> Dots
+</div>
+<div>
+	Timing:
+  <input type="radio"  name="time" onclick="setTimerMode('manual')" checked="checked"> Manual
+  <input type="radio"  name="time" onclick="setTimerMode('auto')" > Automatic
+  <input type="button" class="button" value="Slower" onclick="adjustTimer(1.1)">
+  <input type="button" class="button" value="Faster" onclick="adjustTimer(.9)">
+</div>
+<div>
+	Size:
+  <input type="radio"  name="time" onclick="setSize(5)" > 5
+  <input type="radio"  name="time" onclick="setSize(10)" > 10
+  <input type="radio"  name="time" onclick="setSize(15)"" checked="checked" > 15
+</div>
 </div>
 
 </body>
